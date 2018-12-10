@@ -25,7 +25,8 @@ import PackageDescription
 var dependencies: [Package.Dependency] = []
 var targetDependencies: [Target.Dependency] = []
 
-	
+dependencies.append(.package(url: "https://github.com/IBM-Swift/HeliumLogger.git", from: "1.7.1"))
+targetDependencies.append(.byName(name: "HeliumLogger"))
 #if os(Linux)
 	
 	dependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "2.2.0"))

@@ -24,6 +24,7 @@ import Foundation
 #if os(Linux)
     import OpenSSL
 #endif
+import LoggerAPI
 
 // MARK: -
 
@@ -340,7 +341,7 @@ public class CryptorRSA {
 		///	- Returns:				A new optional `PlaintextData` containing the decrypted data.
 		///
 		public func decrypted(with key: PrivateKey, algorithm: Data.Algorithm) throws -> PlaintextData? {
-			
+			Log.info("entered decrypted")
 			// Must be encrypted...
 			guard self.type == .encryptedType else {
 				
@@ -354,7 +355,7 @@ public class CryptorRSA {
 			}
 			
 			#if os(Linux)
-				
+				Log.info("In linux section")
                 // Convert RSA key to EVP
                 var evp_key = EVP_PKEY_new()
 				var status = EVP_PKEY_set1_RSA(evp_key, .make(optional: key.reference))
@@ -376,7 +377,8 @@ public class CryptorRSA {
 				let encIVLength = Int(EVP_CIPHER_iv_length(.make(optional: encType)))
                 // Size of encryptedKey
                 let encryptedDataLength = Int(self.data.count) - encKeyLength - encIVLength
-                
+                Log.info("decrypted key sizes: \(encKeyLength, encIVLength, encryptedDataLength)")
+
                 // Extract encryptedKey, encryptedData, encryptedIV from data
                 // self.data = encryptedKey + encryptedData + encryptedIV
                 let encryptedKey = self.data.subdata(in: 0..<encKeyLength)
@@ -385,8 +387,10 @@ public class CryptorRSA {
                 
 				#if swift(>=4.2)
 					let rsaDecryptCtx = EVP_CIPHER_CTX_new_wrapper()
+                    Log.info("Swift 4.2: \(rsaDecryptCtx)")
 				#else
     	            let rsaDecryptCtx = UnsafeMutablePointer<EVP_CIPHER_CTX>.allocate(capacity: 1)
+                    Log.info("Not Swift 4.2: \(rsaDecryptCtx)")
 				#endif
 			
                 defer {
@@ -407,14 +411,17 @@ public class CryptorRSA {
                 var decMsgLen: Int32 = 0
                 
                 let decrypted = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(encryptedData.count + encryptedIV.count))
-                
+                Log.info("decrypted: \(decrypted)")
+
                 // EVP_OpenInit returns 0 on error or the recovered secret key size if successful
                 status = encryptedKey.withUnsafeBytes({ (ek: UnsafePointer<UInt8>) -> Int32 in
                     return encryptedIV.withUnsafeBytes({ (iv: UnsafePointer<UInt8>) -> Int32 in
+                        Log.info("EVP_OpenInit parameters: \(rsaDecryptCtx, encType, encryptedKey.count)")
                         return EVP_OpenInit(rsaDecryptCtx, .make(optional: encType), ek, Int32(encryptedKey.count), iv, evp_key)
                     })
                 })
-                guard status != EVP_CIPHER_key_length(.make(optional: encType)) else {
+                guard status != 0 else {
+                    Log.info("Decryption failed, status: \(status)")
                     let source = "Decryption failed"
                     if let reason = CryptorRSA.getLastError(source: source) {
                         
