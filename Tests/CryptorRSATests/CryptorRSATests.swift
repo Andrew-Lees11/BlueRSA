@@ -20,9 +20,9 @@
 //
 
 import XCTest
-#if os(Linux)
+//#if os(Linux)
     import OpenSSL
-#endif
+//#endif
 
 @testable import CryptorRSA
 
@@ -39,11 +39,11 @@ class CryptorRSATests: XCTestCase {
         }
     }
     
-    #if os(Linux)
+    //#if os(Linux)
         static let bundle: Bundle? = nil
-    #else
-        static let bundle: Bundle? = Bundle(for: CryptorRSATests.self)
-    #endif
+//    #else
+//        static let bundle: Bundle? = Bundle(for: CryptorRSATests.self)
+//    #endif
 	
 	///
 	/// Platform independent utility function to locate test files.
@@ -188,33 +188,33 @@ class CryptorRSATests: XCTestCase {
 	}
 
     // This function tests stripping a PEM string that's already been stripped...
-	func test_public_initWithPEMStringHeaderless() throws {
-		
-        let path = CryptorRSATests.getFilePath(for: "public-headerless", ofType: "pem")
-        XCTAssertNotNil(path)
-        
-        if let filePath = path {
-            let str = try String(contentsOf: filePath, encoding: .utf8)
-            let publicKey = try? CryptorRSA.createPublicKey(withPEM: str)
-            XCTAssertNotNil(publicKey)
-            XCTAssertTrue(publicKey!.type == .publicType)
-        }
-	}
+//    func test_public_initWithPEMStringHeaderless() throws {
+//
+//        let path = CryptorRSATests.getFilePath(for: "public-headerless", ofType: "pem")
+//        XCTAssertNotNil(path)
+//
+//        if let filePath = path {
+//            let str = try String(contentsOf: filePath, encoding: .utf8)
+//            let publicKey = try? CryptorRSA.createPublicKey(withPEM: str)
+//            XCTAssertNotNil(publicKey)
+//            XCTAssertTrue(publicKey!.type == .publicType)
+//        }
+//    }
 	
-	func test_publicKeysFromComplexPEMFileWorksCorrectly() {
-		
-        guard let input = CryptorRSATests.pemKeyString(name: "multiple-keys-testcase") else {
-            XCTFail()
-            return
-        }
-        
-		let keys = CryptorRSA.PublicKey.publicKeys(withPEM: input)
-		XCTAssertEqual(keys.count, 9)
-		
-		for publicKey in keys {
-			XCTAssertTrue(publicKey.type == .publicType)
-		}
-	}
+//    func test_publicKeysFromComplexPEMFileWorksCorrectly() {
+//
+//        guard let input = CryptorRSATests.pemKeyString(name: "multiple-keys-testcase") else {
+//            XCTFail()
+//            return
+//        }
+//
+//        let keys = CryptorRSA.PublicKey.publicKeys(withPEM: input)
+//        XCTAssertEqual(keys.count, 9)
+//
+//        for publicKey in keys {
+//            XCTAssertTrue(publicKey.type == .publicType)
+//        }
+//    }
 	
 	func test_publicKeysFromEmptyPEMFileReturnsEmptyArray() {
 		
@@ -339,8 +339,10 @@ class CryptorRSATests: XCTestCase {
             
 			let encrypted = try plainText.encrypted(with: publicKey, algorithm: algorithm)
 			XCTAssertNotNil(encrypted)
+            print(encrypted!.base64String)
 			let decrypted = try encrypted!.decrypted(with: privateKey, algorithm: algorithm)
 			XCTAssertNotNil(decrypted)
+            print(decrypted!.base64String)
 			let decryptedString = try decrypted!.string(using: .utf8)
 			XCTAssertEqual(decryptedString, str)
 			print("Test of algorithm: \(name) succeeded")
@@ -531,6 +533,33 @@ JNHkkGxCfEjy9Z74EO8MoSddiM4+u7gPZsr5f6AZvMsj
 			print("Test of algorithm: \(name) succeeded")
 		}
 	}
+    
+    func test_signFirebase() throws {
+        
+        let algorithms: [(Data.Algorithm, String)] = [(.sha1, ".sha1"),
+                                                      (.sha224, ".sha224"),
+                                                      (.sha256, ".sha256"),
+                                                      (.sha384, ".sha384"),
+                                                      (.sha512, ".sha512")]
+        
+        let privateKeyString = """
+-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDxGWG6vFwmfenW\n8jWTd6vzofsKdRWynJut57/qBQyarS9fziLCUwZpfxxc9kCtbM0erugdzw9mnPSs\n//YC4dh20za6y9i1fLwTUZB9n6eaQvi2B5cJ/hOECLqTtUXQl8fb+7TIg7rmcp2o\n8uE1XOel6hyJXRr3IJnwOeMet3SsSfJq8emz13hCpW7jOLwyOX5GOjbpojGE+U44\n0N67HVMzqqIkk3KSOrdHQbuWxWvaENumsNDpUEzUTqZqerdYSC/F6aXgwytza0Vx\nXqMgoMHq2u76UFrjQ+Vvu3724KyktTwjf71r1UhLiOt3AP1ILVN9vfY1QpZXkcHK\nTAKZLTeTAgMBAAECggEAC8/lXgY7cjaqCGS5I5Px4eUA4nbGYjKnspdPljy6wjCT\nnnCAJcrL3iBNo0T8pI0s5tYakNdOVwXVO6KWCsxw1AWDbBcaSMNR3ZUZ7KWv9Zqs\nCmhdydi1BmYnv0kwIJ5HEEEz5BJcIPfi6d5DErUOCQQVc39obPd1GJ66wLcBPtg6\nRxgovLrSSn1ZcInto0aUUI/J/raMTrkryMnF4BwjrWREAvFf8kBhordtZzI2CcJP\nmm02nLf+PgX+hFKIewKScsusFHujHBhUn5z2eZl5QWHxxizLUnoWab7P9Ztlo4Oq\nO8h/1UX3LWiCZhKHNQyos9qZfn0mGgZOxs4WPWr+2QKBgQD5CXsyu0eAGMu2JCMM\nvZ2SEe6vjhR0/AFjhTTzMr3SXjkUXAhfnlzJNJ0O4vhSXGepjq7eFRW1tRAXp5CN\nfatwzqZ9Ai6YUZiC7zRp33BjZFpd/RBZgqoJFczUjVGJtYTOmZETgEpWUUGtUTk0\nKT+WDT3zvvS+PW03k2FtZqny2wKBgQD31xV76cEl3Sb484taVzYS1eZOkCU/oSep\nReVaCN7E+VOfd4G27xwx44SMEdIGL25hD/uX9/4hptisNa6iVgDxgxKdK4QQLvvG\n27VORZdrLJBkwZENHazAlCTTcJ0Hnt0M4izHCilwc/HeA16SoeVf9HSv0JmsbDtp\nZYeKiig/qQKBgFVQ/jffGRu1YvS/ZJKU00qbgh36mt+JBiDGHeHDXGyZgwyKiwPX\nCQqVT8kt0MzGg2z/SMEkkA90PFMeQNN4XieDZF4nRTdBnPIeaOJsfeBPHPZeIB/K\nN95s7YNT9r8qxJjS23TG2rC/nbR2wxYvm20YlETRAp+6A5SqlRIZvddJAoGBAO/Z\ndzE0R3gdTlofV/1V6T7RQtFFLsclbvyiaBN6Ah0eLY9mWGJxhRfC18O2e0sBHBFT\nJmkr1wU6MvZ1/Uudb8xKzPjN5EDFN2R7vDrDnoZZ2mOn8HiA/25f8EOv+EgntkWB\nnVQCwZfSnX/+QsglZZY3PbXoatAy7kxRtZqdmdYBAoGALTxCnbz6G34Xtqy6d1PR\nqiSzn7kYP3vasfHZqrvhJ99cvK4VNxlp/zJCqb0GBxT/ZdAItLp94VueiS3hubNS\n5pxOfbUPKxzxWK5xzmmxWm/0bUT55A1fW6IRlKSdRuQH1pMb+jYZRmUa9Y1DV8ey\npgSl+MBViZj8bRuCJ9SkuuA=\n-----END PRIVATE KEY-----\n
+"""
+        
+        // Test all the algorithms available...
+        for (algorithm, name) in algorithms {
+            
+            print("Testing algorithm: \(name)")
+            let data = CryptorRSATests.randomData(count: 8192)
+            let message = CryptorRSA.createPlaintext(with: data)
+            if let privateKey = try? CryptorRSA.createPrivateKey(withPEM: privateKeyString) {
+                let signature = try message.signed(with: privateKey, algorithm: algorithm)
+                XCTAssertNotNil(signature)
+                XCTAssertEqual(signature!.base64String, signature!.data.base64EncodedString())
+                print("Test of algorithm: \(name) succeeded")
+            }
+        }
+    }
 
     func test_verifyAppIDToken() throws {
         
@@ -585,6 +614,89 @@ JNHkkGxCfEjy9Z74EO8MoSddiM4+u7gPZsr5f6AZvMsj
         
         let verificationResult = try message.verify(with: tokenPublicKey, signature: signature, algorithm: .sha256)
         XCTAssertTrue(verificationResult)
+    }
+    
+//    func test_ECDSA() {
+//        let p8PrivateKey = """
+//-----BEGIN PRIVATE KEY-----
+//MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgGH2MylyZjjRdauTk
+//xxXW6p8VSHqIeVRRKSJPg1xn6+KgCgYIKoZIzj0DAQehRANCAAS/mNzQ7aBbIBr3
+//DiHiJGIDEzi6+q3mmyhH6ZWQWFdFei2qgdyM1V6qtRPVq+yHBNSBebbR4noE/IYO
+//hMdWYrKn
+//-----END PRIVATE KEY-----
+//"""
+//        let PemPrivateKey = """
+//-----BEGIN EC PRIVATE KEY-----
+//MHcCAQEEIJX+87WJ7Gh19sohyZnhxZeXYNOcuGv4Q+8MLge4UkaZoAoGCCqGSM49
+//AwEHoUQDQgAEikc5m6C2xtDWeeAeT18WElO37zvFOz8p4kAlhvgIHN23XIClNESg
+//KVmLgSSq2asqiwdrU5YHbcHFkgdABM1SPA==
+//-----END EC PRIVATE KEY-----
+//"""
+//        let publicKey = """
+//-----BEGIN PUBLIC KEY-----
+//MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEikc5m6C2xtDWeeAeT18WElO37zvF
+//Oz8p4kAlhvgIHN23XIClNESgKVmLgSSq2asqiwdrU5YHbcHFkgdABM1SPA==
+//-----END PUBLIC KEY-----
+//"""
+//
+//        let exampleData = "Example".data(using: .utf8)!
+//        guard let pemKey = CryptorECDSA.PrivateKey(pemKey: PemPrivateKey) else {
+//            return XCTFail()
+//        }
+//        guard let ecdsaPublicKey = CryptorECDSA.PublicKey(pemKey: publicKey) else {
+//            return XCTFail()
+//        }
+//        let eckey = EC_KEY_new_by_curve_name(NID_secp256k1)
+//        EC_KEY_generate_key(eckey)
+//        let ecpub = CryptorECDSA.PublicKey(nativeKey: eckey)
+//        let ecpri = CryptorECDSA.PrivateKey(nativeKey: eckey)
+//        guard let signature = CryptorECDSA.createSignature(data: exampleData, privateKey: ecpri) else {
+//            return XCTFail()
+//        }
+//        let verified = CryptorECDSA.verifySignature(digestData: exampleData, signatureData: signature, publicKey: ecpub)
+//        //let verified = CryptorECDSA.signAndVerify(data: exampleData, publicKey: ecdsaPublicKey, privateKey: pemKey)
+//        XCTAssert(verified == true)
+//    }
+    
+    func test_ECDSA() {
+        let PemPrivateKey = """
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIJX+87WJ7Gh19sohyZnhxZeXYNOcuGv4Q+8MLge4UkaZoAoGCCqGSM49
+AwEHoUQDQgAEikc5m6C2xtDWeeAeT18WElO37zvFOz8p4kAlhvgIHN23XIClNESg
+KVmLgSSq2asqiwdrU5YHbcHFkgdABM1SPA==
+-----END EC PRIVATE KEY-----
+"""
+        let publicKey = """
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEikc5m6C2xtDWeeAeT18WElO37zvF
+Oz8p4kAlhvgIHN23XIClNESgKVmLgSSq2asqiwdrU5YHbcHFkgdABM1SPA==
+-----END PUBLIC KEY-----
+"""
+//        let eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)
+//        EC_KEY_generate_key(eckey)
+//
+//        let ecpub = CryptorECDSA.PublicKey(nativeKey: eckey)
+//        let ecpri = CryptorECDSA.PrivateKey(nativeKey: eckey)
+//        let exampleData = "Example".data(using: .utf8)!
+        let exampleJWTHeader = try! JSONSerialization.data(withJSONObject: ["alg": "ES256", "typ": "JWT"])
+        let exampleJWTClaims = try! JSONSerialization.data(withJSONObject: ["sub": "1234567890","admin": true, "iat": 1516239022])
+        
+        let unsignedJWT = exampleJWTHeader.base64urlEncodedString() + "." + exampleJWTClaims.base64urlEncodedString()
+        let unsignedData = unsignedJWT.data(using: .utf8)!
+        
+        guard let ecdsaPrivateKey = CryptorECDSA.PrivateKey(pemKey: PemPrivateKey) else {
+            return XCTFail()
+        }
+        guard let ecdsaPublicKey = CryptorECDSA.PublicKey(pemKey: publicKey) else {
+            return XCTFail()
+        }
+        guard let jwtSignature = CryptorECDSA.createSignature(data: unsignedData, privateKey: ecdsaPrivateKey) else {
+            return XCTFail()
+        }
+        print(jwtSignature.base64urlEncodedString())
+        print(unsignedJWT + "." + jwtSignature.base64urlEncodedString())
+        let verified = CryptorECDSA.verifySignature(digestData: unsignedData, signatureData: jwtSignature, publicKey: ecdsaPublicKey)
+        XCTAssert(verified == true)
     }
 
 	// MARK: Test Utilities
@@ -656,11 +768,11 @@ JNHkkGxCfEjy9Z74EO8MoSddiM4+u7gPZsr5f6AZvMsj
 		var data = Data(count: count)
 		data.withUnsafeMutableBytes { (bytes: UnsafeMutablePointer<UInt8>) -> Void in
 			
-            #if os(Linux)
+            //#if os(Linux)
                 _ = RAND_bytes(bytes, Int32(count))
-            #else
-                _ = SecRandomCopyBytes(kSecRandomDefault, count, bytes)
-            #endif
+//            #else
+//                _ = SecRandomCopyBytes(kSecRandomDefault, count, bytes)
+//            #endif
 		}
 		return data
 	}
@@ -697,3 +809,21 @@ JNHkkGxCfEjy9Z74EO8MoSddiM4+u7gPZsr5f6AZvMsj
     }
 }
 
+extension Data {
+    func base64urlEncodedString() -> String {
+        let result = self.base64EncodedString()
+        return result.replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+    
+    init?(base64urlEncoded: String) {
+        let paddingLength = 4 - base64urlEncoded.count % 4
+        let padding = (paddingLength < 4) ? String(repeating: "=", count: paddingLength) : ""
+        let base64EncodedString = base64urlEncoded
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+            + padding
+        self.init(base64Encoded: base64EncodedString)
+    }
+}

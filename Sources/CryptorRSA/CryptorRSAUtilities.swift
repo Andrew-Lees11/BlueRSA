@@ -19,11 +19,11 @@
 // 	limitations under the License.
 //
 
-#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-	import CommonCrypto
-#elseif os(Linux)
+//#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+//    import CommonCrypto
+//#elseif os(Linux)
 	import OpenSSL
-#endif
+//#endif
 
 import Foundation
 
@@ -35,7 +35,7 @@ import Foundation
 @available(macOS 10.12, iOS 10.0, *)
 public extension CryptorRSA {
 	
-#if os(Linux)
+//#if os(Linux)
 	
 	///
 	/// Create a key from key data.
@@ -177,40 +177,40 @@ public extension CryptorRSA {
 		return reason
 	}
 	
-#else
-	
-	///
-	/// Create a key from key data.
-	///
-	/// - Parameters:
-	///		- keyData:			`Data` representation of the key.
-	///		- type:				Type of key data.
-	///
-	///	- Returns:				`SecKey` representation of the key.
-	///
-	static func createKey(from keyData: Data, type: CryptorRSA.RSAKey.KeyType) throws ->  NativeKey {
-		
-		var keyData = keyData
-        
-		let keyClass = type == .publicType ? kSecAttrKeyClassPublic : kSecAttrKeyClassPrivate
-		
-		let sizeInBits = keyData.count * MemoryLayout<UInt8>.size
-		let keyDict: [CFString: Any] = [
-			kSecAttrKeyType: kSecAttrKeyTypeRSA,
-			kSecAttrKeyClass: keyClass,
-			kSecAttrKeySizeInBits: NSNumber(value: sizeInBits)
-		]
-		
-		guard let key = SecKeyCreateWithData(keyData as CFData, keyDict as CFDictionary, nil) else {
-			
-			throw Error(code: ERR_ADD_KEY, reason: "Couldn't create key reference from key data")
-		}
-        
-		return key
-		
-	}
-	
-#endif
+//#else
+//    
+//    ///
+//    /// Create a key from key data.
+//    ///
+//    /// - Parameters:
+//    ///        - keyData:            `Data` representation of the key.
+//    ///        - type:                Type of key data.
+//    ///
+//    ///    - Returns:                `SecKey` representation of the key.
+//    ///
+//    static func createKey(from keyData: Data, type: CryptorRSA.RSAKey.KeyType) throws ->  NativeKey {
+//        
+//        var keyData = keyData
+//        
+//        let keyClass = type == .publicType ? kSecAttrKeyClassPublic : kSecAttrKeyClassPrivate
+//        
+//        let sizeInBits = keyData.count * MemoryLayout<UInt8>.size
+//        let keyDict: [CFString: Any] = [
+//            kSecAttrKeyType: kSecAttrKeyTypeRSA,
+//            kSecAttrKeyClass: keyClass,
+//            kSecAttrKeySizeInBits: NSNumber(value: sizeInBits)
+//        ]
+//        
+//        guard let key = SecKeyCreateWithData(keyData as CFData, keyDict as CFDictionary, nil) else {
+//            
+//            throw Error(code: ERR_ADD_KEY, reason: "Couldn't create key reference from key data")
+//        }
+//        
+//        return key
+//        
+//    }
+//    
+//#endif
 
 	///
 	/// Get the Base64 representation of a PEM encoded string after stripping off the PEM markers.
@@ -353,24 +353,24 @@ extension String {
 
 // MARK: -
 
-#if !os(Linux)
-
-	// MARK: -- CFString Extension for Hashing
-	
-	///
-	/// Extension to CFString to make it hashable.
-	///
-	extension CFString: Hashable {
-		
-		/// Return the hash value of a CFString
-		public var hashValue: Int {
-			return (self as String).hashValue
-		}
-		
-		/// Comparison of CFStrings
-		static public func == (lhs: CFString, rhs: CFString) -> Bool {
-			return lhs as String == rhs as String
-		}
-	}
-	
-#endif
+//#if !os(Linux)
+//
+//    // MARK: -- CFString Extension for Hashing
+//    
+//    ///
+//    /// Extension to CFString to make it hashable.
+//    ///
+//    extension CFString: Hashable {
+//        
+//        /// Return the hash value of a CFString
+//        public var hashValue: Int {
+//            return (self as String).hashValue
+//        }
+//        
+//        /// Comparison of CFStrings
+//        static public func == (lhs: CFString, rhs: CFString) -> Bool {
+//            return lhs as String == rhs as String
+//        }
+//    }
+//    
+//#endif
